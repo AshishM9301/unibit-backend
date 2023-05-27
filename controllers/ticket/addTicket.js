@@ -29,6 +29,37 @@ const addTicket = async (req, res, next) => {
       }
     }
 
+    const data = await Ticket.aggregate([
+      {
+        $match: {},
+      },
+      {
+        $project: {
+          ticket: ["$first_row", "$second_row", "$third_row"],
+        },
+      },
+    ]);
+
+    // For Cheking All ticket are unique
+
+    // f = true;
+
+    // while (f) {
+    //   data.map((val) => {
+    //     val.map((v) => {
+    //       if (first.includes(v)) {
+    //         first = rowCreation();
+    //       } else if (second.includes(v)) {
+    //         last = rowCreation();
+    //       } else if (last.includes(v)) {
+    //         last = rowCreation();
+    //       } else {
+    //         f = false;
+    //       }
+    //     });
+    //   });
+    // }
+
     const newTicket = new Ticket({
       first_row: first,
       second_row: second,
