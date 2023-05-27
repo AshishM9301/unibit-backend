@@ -11,10 +11,18 @@ const addTicket = async (req, res, next) => {
 
     flag = true;
 
+    console.log(
+      arrayCompare(first, second),
+      arrayCompare(second, last),
+      arrayCompare(first, last)
+    );
+
     while (flag) {
       if (arrayCompare(first, second)) {
         second = rowCreation();
       } else if (arrayCompare(first, last)) {
+        last = rowCreation();
+      } else if (arrayCompare(second, last)) {
         last = rowCreation();
       } else {
         flag = false;
@@ -45,7 +53,7 @@ const rowCreation = () => {
   let no = getUniqueRandomNumber(0, 8, 5);
 
   for (let i = 0; i < 5; i++) {
-    a[no[i]] = getUniqueRandomNumber(no[i] * 10, no[i] * 10 + 10, 1)[0];
+    a[no[i]] = getUniqueRandomNumber(no[i] * 10, no[i] * 10 + 9, 1)[0];
   }
 
   return a;
@@ -72,61 +80,6 @@ function arrayCompare(_arr1, _arr2) {
 
   return true;
 }
-
-// function generateTicket() {
-//   var cols,
-//     finalTicket,
-//     flag = true,
-//     colPlaceholder = [];
-//   while (flag) {
-//     cols = Array(9).fill(2);
-//     // console.log(cols);
-//     finalTicket = Array(6);
-//     finalTicket[0] = Array(9).fill(0);
-//     finalTicket[1] = Array(9).fill(0);
-//     finalTicket[2] = Array(9).fill(0);
-//     finalTicket[3] = Array(9).fill(0);
-//     finalTicket[4] = Array(9).fill(0);
-//     finalTicket[5] = Array(9).fill(0);
-//     var r = getUniqueRandomNumber(0, 8, 3);
-
-//     // console.log(r);
-//     for (i = 0; i < r.length; i++) {
-//       cols[r[i]] = 1;
-//     }
-
-//     colPlaceholder = [];
-//     for (i = 0; i < cols.length; i++) {
-//       colPlaceholder.push(getUniqueRandomNumber(0, 2, cols[i]));
-//     }
-
-//     // console.log(colPlaceholder);
-//     for (i = 0; i < colPlaceholder.length; i++) {
-//       nums = getUniqueRandomNumber(
-//         i * 10 + 1,
-//         i * 10 + 10,
-//         colPlaceholder[i].length
-//       );
-//       for (j = 0; j < colPlaceholder[i].length; j++) {
-//         finalTicket[colPlaceholder[i][j]][i] = nums[j];
-//       }
-//     }
-//     flag = testFinalTicket(finalTicket);
-//   }
-//   return finalTicket;
-// }
-
-// function testFinalTicket(ticket) {
-//   for (i = 0; i < 3; i++) {
-//     var arr = ticket[i];
-//     count = 0;
-//     for (j = 0; j < arr.length; j++) {
-//       if (arr[j] === 0) count++;
-//     }
-//     if (count != 4) return true;
-//   }
-//   return false;
-// }
 
 function sortNumbersinArray(a, b) {
   return a > b ? 1 : b > a ? -1 : 0;
