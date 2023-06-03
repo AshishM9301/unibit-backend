@@ -3,24 +3,32 @@ const Ticket = require("../../models/Ticket");
 
 const addTicket = async (req, res, next) => {
   try {
-    let a = await genrateTicket();
+    let tickets = 1;
+    if (req.body.tickets) {
+      tickets = req.body.tickets;
+    }
+    console.log(tickets);
+    let data = [];
+    for (let index = 0; index < tickets; index++) {
+      let a = genrateTicket();
 
-    let newTicket = new Ticket({
-      first_row: a[0],
-      second_row: a[1],
-      third_row: a[2],
-    });
+      let newTicket = new Ticket({
+        first_row: a[0],
+        second_row: a[1],
+        third_row: a[2],
+      });
 
-    let saved = await newTicket.save();
+      let saved = await newTicket.save();
 
-    let data = {
-      id: saved._id,
-      ticket: [
-        JSON.stringify(saved.first_row),
-        JSON.stringify(saved.second_row),
-        JSON.stringify(saved.third_row),
-      ],
-    };
+      data.push({
+        id: saved._id,
+        ticket: [
+          JSON.stringify(saved.first_row),
+          JSON.stringify(saved.second_row),
+          JSON.stringify(saved.third_row),
+        ],
+      });
+    }
 
     res.status(200).json({
       success: true,
