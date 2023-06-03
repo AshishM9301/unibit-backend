@@ -3,74 +3,28 @@ const Ticket = require("../../models/Ticket");
 
 const addTicket = async (req, res, next) => {
   try {
-    // let a = generateTicket();
+    let a = await genrateTicket();
 
-    let first = rowCreation();
-    let second = rowCreation();
-    let last = rowCreation();
-
-    flag = true;
-
-    console.log(
-      arrayCompare(first, second),
-      arrayCompare(second, last),
-      arrayCompare(first, last)
-    );
-
-    while (flag) {
-      if (arrayCompare(first, second)) {
-        second = rowCreation();
-      } else if (arrayCompare(first, last)) {
-        last = rowCreation();
-      } else if (arrayCompare(second, last)) {
-        last = rowCreation();
-      } else {
-        flag = false;
-      }
-    }
-
-    const data = await Ticket.aggregate([
-      {
-        $match: {},
-      },
-      {
-        $project: {
-          ticket: ["$first_row", "$second_row", "$third_row"],
-        },
-      },
-    ]);
-
-    // For Cheking All ticket are unique
-
-    // f = true;
-
-    // while (f) {
-    //   data.map((val) => {
-    //     val.map((v) => {
-    //       if (first.includes(v)) {
-    //         first = rowCreation();
-    //       } else if (second.includes(v)) {
-    //         last = rowCreation();
-    //       } else if (last.includes(v)) {
-    //         last = rowCreation();
-    //       } else {
-    //         f = false;
-    //       }
-    //     });
-    //   });
-    // }
-
-    const newTicket = new Ticket({
-      first_row: first,
-      second_row: second,
-      third_row: last,
+    let newTicket = new Ticket({
+      first_row: a[0],
+      second_row: a[1],
+      third_row: a[2],
     });
 
-    newTicket.save();
+    let saved = await newTicket.save();
+
+    let data = {
+      id: saved._id,
+      ticket: [
+        JSON.stringify(saved.first_row),
+        JSON.stringify(saved.second_row),
+        JSON.stringify(saved.third_row),
+      ],
+    };
 
     res.status(200).json({
       success: true,
-      data: newTicket,
+      data: data,
     });
   } catch (err) {
     console.log(err);
@@ -78,77 +32,171 @@ const addTicket = async (req, res, next) => {
   }
 };
 
-const rowCreation = () => {
-  let a = Array(9).fill(0);
+//////
 
-  let no = getUniqueRandomNumber(0, 8, 5);
+const randamValue = (min, max) => Math.floor(Math.random() * (max - min) + min);
+const genrateTicket = () => {
+  //Creating ticket like
+  // [[0,0,0,0,0,0,0,0,0],
+  // [0,0,0,0,0,0,0,0,0],
+  // [0,0,0,0,0,0,0,0,0]]
+  let ticket = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  ];
 
-  for (let i = 0; i < 5; i++) {
-    a[no[i]] = getUniqueRandomNumber(no[i] * 10, no[i] * 10 + 9, 1)[0];
+  let token = generateToken(ticket);
+  if (!token) {
+    token = generateToken(ticket);
   }
+  console.log(token);
+  if (!token) {
+    return false; // in 2nd  try,, if token not generated then return false
+  }
+  rearrangeToken(ticket);
+  sortColumnOnly(ticket);
 
-  return a;
+  return ticket;
 };
 
-function arrayCompare(_arr1, _arr2) {
-  if (
-    !Array.isArray(_arr1) ||
-    !Array.isArray(_arr2) ||
-    _arr1.length !== _arr2.length
-  ) {
-    return false;
-  }
-
-  // .concat() to not mutate arguments
-  const arr1 = _arr1.concat().sort();
-  const arr2 = _arr2.concat().sort();
-
-  for (let i = 0; i < arr1.length; i++) {
-    if (arr1[i] !== arr2[i]) {
+const generateToken = (tambola) => {
+  let totalTambola = 15;
+  let count = 0;
+  while (totalTambola > 0) {
+    let row = randamValue(0, 3);
+    let col = randamValue(0, 9);
+    let storeNumber = checkAndReturn(row, col, tambola);
+    if (storeNumber != 0) {
+      totalTambola--;
+      tambola[row][col] = storeNumber;
+    }
+    count++;
+    if (count > 100) {
       return false;
     }
   }
+  if (count <= 100) return true;
+};
 
-  return true;
-}
+// Validating ticket
+const checkAndReturn = (row, col, tambola) => {
+  if (tambola[row][col] != 0) return 0;
+  //checking column not more then 5
+  let rowCount = 0;
+  for (let i = 0; i < 3; i++) {
+    if (tambola[i][col] != 0) {
+      rowCount++;
+    }
+  }
+  //every column contain atleast one
+  if (rowCount >= 2) return 0;
+  let countCol = 0;
+  for (let i = 0; i < 9; i++) {
+    if (tambola[row][i] != 0) {
+      countCol++;
+    }
+    if (countCol > 4) return 0;
+  }
 
-function sortNumbersinArray(a, b) {
-  return a > b ? 1 : b > a ? -1 : 0;
-}
+  let start = col * 10;
+  let gotRandomValue;
+  // removing duplicate if any
+  let loop = 0; //while loop should not go in infinite loop
+  while (true) {
+    loop++;
+    gotRandomValue = randamValue(start + 1, start + 10);
+    let count = 0;
+    for (let i = 0; i < 3; i++) {
+      if (gotRandomValue === tambola[i][col]) {
+        count++;
+      }
+    }
+    if (count === 0) break;
+    if (loop > 5) {
+      return 0;
+    }
+  }
 
-function getUniqueRandomNumber(min, max, count, sort = true) {
-  var random = [];
-  for (var i = 0; i < count; i++) {
-    flag = true;
-    while (flag) {
-      a = randomNumber(min, max);
-      if (random.indexOf(a) === -1) {
-        random.push(a);
-        flag = false;
+  return gotRandomValue;
+};
+
+const sortColumnOnly = (tambola) => {
+  for (let col = 0; col < 9; col++) {
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 3; j++) {
+        if (tambola[i][col] != 0 && tambola[j][col] != 0) {
+          if (tambola[i][col] > tambola[j][col]) {
+            let temp = tambola[i][col];
+            tambola[i][col] = tambola[j][col];
+            tambola[j][col] = temp;
+          }
+        }
       }
     }
   }
-  if (sort) random.sort(sortNumbersinArray);
-  return random;
-}
+};
 
-function randomNumber(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+// each column must contain one value
+const atleastOneInColumn = (a, b, tambola) => {
+  let value = a[0];
+  if (value == 0) {
+    let row = randamValue(0, 3) || 1;
+    tambola[row][0] = randamValue(1, 10);
+    return;
+  } else {
+    let notDone = true;
+    let count = 0;
+    do {
+      count++;
+      let col = randamValue(0, 9);
+      if (value === col) {
+        notDone = true;
+      } else if (b[col] > 1) {
+        for (let j = 0; j < 3; j++) {
+          if (tambola[j][col] != 0) {
+            let row = randamValue(0, 3);
+            let start = value * 10;
+            tambola[row][value] = randamValue(start + 1, start + 10);
+            notDone = false;
 
-const chooseRandom = (arr, num = 1) => {
-  const res = [];
-  for (let i = 0; i < num; ) {
-    const random = Math.floor(Math.random() * arr.length);
-    if (res.indexOf(arr[random]) !== -1) {
-      continue;
-    }
-    res.push(arr[random]);
-    i++;
+            tambola[j][col] = 0;
+            b[col] = b[col] - 1;
+            break;
+          }
+        }
+      }
+
+      if (count > 10) {
+        notDone = false;
+        break;
+      }
+    } while (notDone);
   }
-  return res;
+};
+
+const countColumnNumber = (col, tambola) => {
+  let count = 0;
+  for (let i = 0; i < 3; i++) {
+    if (tambola[i][col] != 0) {
+      count++;
+    }
+  }
+  return count;
+};
+
+const rearrangeToken = (tambola) => {
+  let a = [];
+  let b = [];
+  for (let i = 0; i < 9; i++) {
+    let count = countColumnNumber(i, tambola);
+    if (count === 0) {
+      a.push(i);
+    } else {
+      b[i] = count;
+    }
+  }
+  atleastOneInColumn(a, b, tambola);
 };
 
 module.exports = addTicket;

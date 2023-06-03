@@ -9,7 +9,19 @@ const allTicket = async (req, res, next) => {
       {
         $project: {
           _id: "$_id",
-          ticket: ["$first_row", "$second_row", "$third_row"],
+          ticket: {
+            $function: {
+              body: function (first_row, second_row, third_row) {
+                return [
+                  JSON.stringify(first_row),
+                  JSON.stringify(second_row),
+                  JSON.stringify(third_row),
+                ];
+              },
+              args: ["$first_row", "$second_row", "$third_row"],
+              lang: "js",
+            },
+          },
         },
       },
     ]);
